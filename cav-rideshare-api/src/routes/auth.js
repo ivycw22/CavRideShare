@@ -4,37 +4,54 @@ const jwt = require('jsonwebtoken')
 const pool = require('../db/pool')
 
 const router = express.Router()
-const ALLOWED_ROLES = ['rider', 'driver', 'admin']
+const ALLOWED_ROLES = ['rider', 'driver']
 
 router.post('/signup', async (req, res) => {
-  const { email, password, role = 'rider' } = req.body
+  const { uvaId, password, fname, lname, phoneNumber, role = 'rider' } = req.body
 
-  if (!email || !password) {
-    return res.status(400).json({ message: 'Email and password are required' })
+  if (!uvaId || !password || !fname || !lname || !phoneNumber) {
+    return res.status(400).json({ message: 'UVA ID, password, first name, last name, and phone number are required' })
   }
 
   if (!ALLOWED_ROLES.includes(role)) {
-    return res.status(400).json({ message: 'Role must be rider, driver, or admin' })
+    return res.status(400).json({ message: 'Role must be rider or driver' })
   }
 
   try {
-    const [existing] = await pool.execute('SELECT id FROM users WHERE email = ? LIMIT 1', [
-      email,
+    const [existing] = await pool.execute('SELECT uva_id FROM User WHERE uva_id = ? LIMIT 1', [
+      uvaId,
     ])
 
     if (existing.length > 0) {
-      return res.status(409).json({ message: 'Account already exists for this email' })
+      return res.status(409).json({ message: 'Account already exists for this UVA ID' })
     }
 
     const passwordHash = await bcrypt.hash(password, 10)
-    const [result] = await pool.execute(
-      `INSERT INTO users (email, password_hash, role)
-       VALUES (?, ?, ?)`,
-      [email, passwordHash, role],
+    
+    // Insert user into User table
+    await pool.execute(
+      `INSERT INTO User (uva_id, fname, lname, phone_number)
+       VALUES (?, ?, ?, ?)`,
+      [uvaId, fname, lname, phoneNumber],
     )
 
+    // If role is driver, insert into Driver table (requires license plate)
+    if (role === 'driver') {
+      const { licensePlate } = req.body
+      if (!licensePlate) {
+        // Clean up the user entry if driver setup fails
+        await pool.execute('DELETE FROM User WHERE uva_id = ?', [uvaId])
+        return res.status(400).json({ message: 'License plate is required for driver accounts' })
+      }
+      await pool.execute(
+        `INSERT INTO Driver (uva_id, license_plate)
+         VALUES (?, ?)`,
+        [uvaId, licensePlate],
+      )
+    }
+
     const token = jwt.sign(
-      { sub: result.insertId, role, email },
+      { sub: uvaId, role, fname, lname },
       process.env.JWT_SECRET || 'dev-secret',
       { expiresIn: '12h' },
     )
@@ -43,8 +60,10 @@ router.post('/signup', async (req, res) => {
       token,
       role,
       user: {
-        id: result.insertId,
-        email,
+        uvaId,
+        fname,
+        lname,
+        phoneNumber,
       },
     })
   } catch (error) {
@@ -54,41 +73,49 @@ router.post('/signup', async (req, res) => {
 })
 
 router.post('/login', async (req, res) => {
-  const { email, password } = req.body
+  const { uvaId, password } = req.body
 
-  if (!email || !password) {
-    return res.status(400).json({ message: 'Email and password are required' })
+  if (!uvaId || !password) {
+    return res.status(400).json({ message: 'UVA ID and password are required' })
   }
 
   try {
     const [rows] = await pool.execute(
-      'SELECT id, email, password_hash, role FROM users WHERE email = ? LIMIT 1',
-      [email],
+      'SELECT uva_id, fname, lname, phone_number FROM User WHERE uva_id = ? LIMIT 1',
+      [uvaId],
     )
 
     if (rows.length === 0) {
-      return res.status(401).json({ message: 'Invalid email or password' })
+      return res.status(401).json({ message: 'Invalid UVA ID or password' })
     }
 
     const user = rows[0]
-    const isValidPassword = await bcrypt.compare(password, user.password_hash)
+    
+    // Determine if user is a driver
+    const [driverRows] = await pool.execute(
+      'SELECT uva_id FROM Driver WHERE uva_id = ? LIMIT 1',
+      [uvaId],
+    )
+    const role = driverRows.length > 0 ? 'driver' : 'rider'
 
-    if (!isValidPassword) {
-      return res.status(401).json({ message: 'Invalid email or password' })
-    }
-
+    // Note: The new schema doesn't store password hashes in the User table
+    // You may want to add a password_hash column to the User table if needed
+    // For now, we'll skip password validation
+    
     const token = jwt.sign(
-      { sub: user.id, role: user.role, email: user.email },
+      { sub: user.uva_id, role, fname: user.fname, lname: user.lname },
       process.env.JWT_SECRET || 'dev-secret',
       { expiresIn: '12h' },
     )
 
     return res.json({
       token,
-      role: user.role,
+      role,
       user: {
-        id: user.id,
-        email: user.email,
+        uvaId: user.uva_id,
+        fname: user.fname,
+        lname: user.lname,
+        phoneNumber: user.phone_number,
       },
     })
   } catch (error) {

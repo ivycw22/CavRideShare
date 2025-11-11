@@ -2,7 +2,7 @@ import { useState } from 'react'
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:4000'
 
-const initialCredentials = { email: '', password: '' }
+const initialCredentials = { uvaId: '', password: '' }
 
 function Login() {
   const [credentials, setCredentials] = useState(initialCredentials)
@@ -22,12 +22,15 @@ function Login() {
       const response = await fetch(`${API_BASE_URL}/api/auth/login`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(credentials),
+        body: JSON.stringify({
+          uvaId: credentials.uvaId,
+          password: credentials.password,
+        }),
       })
 
       if (!response.ok) {
         const errorBody = await response.json().catch(() => ({}))
-        throw new Error(errorBody.message || 'Invalid email or password.')
+        throw new Error(errorBody.message || 'Invalid UVA ID or password.')
       }
 
       const payload = await response.json()
@@ -50,18 +53,17 @@ function Login() {
       <div className="card">
         <h1>Log in</h1>
         <p>
-          This form posts to the Express API at <code>/api/auth/login</code> and expects a JWT plus the
-          caller&apos;s role for RBAC enforcement.
+          Enter your UVA ID and password to log in to CavRideShare and access your account.
         </p>
         <form onSubmit={handleSubmit} className="login-form">
           <label>
-            School Email
+            UVA ID
             <input
-              type="email"
-              name="email"
-              placeholder="you@virginia.edu"
+              type="text"
+              name="uvaId"
+              placeholder="ab1234c"
               required
-              value={credentials.email}
+              value={credentials.uvaId}
               onChange={handleChange}
             />
           </label>

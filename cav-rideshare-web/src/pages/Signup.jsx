@@ -3,10 +3,14 @@ import { useState } from 'react'
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:4000'
 
 const initialForm = {
-  email: '',
+  uvaId: '',
+  fname: '',
+  lname: '',
+  phoneNumber: '',
+  licensePlate: '',
   password: '',
   confirmPassword: '',
-  role: 'driver',
+  role: 'rider',
 }
 
 function Signup() {
@@ -27,17 +31,31 @@ function Signup() {
       return
     }
 
+    if (form.role === 'driver' && !form.licensePlate) {
+      setStatus({ state: 'error', message: 'License plate is required for drivers.' })
+      return
+    }
+
     setStatus({ state: 'loading', message: 'Creating your account...' })
 
     try {
+      const payload = {
+        uvaId: form.uvaId,
+        fname: form.fname,
+        lname: form.lname,
+        phoneNumber: form.phoneNumber,
+        password: form.password,
+        role: form.role,
+      }
+
+      if (form.role === 'driver') {
+        payload.licensePlate = form.licensePlate
+      }
+
       const response = await fetch(`${API_BASE_URL}/api/auth/signup`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          email: form.email,
-          password: form.password,
-          role: form.role,
-        }),
+        body: JSON.stringify(payload),
       })
 
       if (!response.ok) {
@@ -45,10 +63,10 @@ function Signup() {
         throw new Error(errorBody.message || 'Unable to sign up.')
       }
 
-      const payload = await response.json()
-      if (payload.token) {
-        localStorage.setItem('cavrideshare_token', payload.token)
-        setTokenPreview(payload.token)
+      const responsePayload = await response.json()
+      if (responsePayload.token) {
+        localStorage.setItem('cavrideshare_token', responsePayload.token)
+        setTokenPreview(responsePayload.token)
       }
 
       setStatus({
@@ -67,18 +85,50 @@ function Signup() {
       <div className="card">
         <h1>Create an account</h1>
         <p>
-          Sign up with your school email, choose whether you are a rider or driver, and we&apos;ll
-          return a JWT so you can start creating trips right away.
+          Sign up with your UVA ID, provide your information, and we&apos;ll return a JWT so you can start using CavRideShare right away.
         </p>
         <form onSubmit={handleSubmit} className="login-form">
           <label>
-            School Email
+            UVA ID
             <input
-              type="email"
-              name="email"
-              placeholder="you@virginia.edu"
+              type="text"
+              name="uvaId"
+              placeholder="ab1234c"
               required
-              value={form.email}
+              value={form.uvaId}
+              onChange={handleChange}
+            />
+          </label>
+          <label>
+            First Name
+            <input
+              type="text"
+              name="fname"
+              placeholder="John"
+              required
+              value={form.fname}
+              onChange={handleChange}
+            />
+          </label>
+          <label>
+            Last Name
+            <input
+              type="text"
+              name="lname"
+              placeholder="Doe"
+              required
+              value={form.lname}
+              onChange={handleChange}
+            />
+          </label>
+          <label>
+            Phone Number
+            <input
+              type="tel"
+              name="phoneNumber"
+              placeholder="(434) 555-1234"
+              required
+              value={form.phoneNumber}
               onChange={handleChange}
             />
           </label>
@@ -107,10 +157,23 @@ function Signup() {
           <label>
             Role
             <select name="role" value={form.role} onChange={handleChange}>
-              <option value="driver">Driver (I have a car)</option>
               <option value="rider">Rider</option>
+              <option value="driver">Driver (I have a car)</option>
             </select>
           </label>
+          {form.role === 'driver' && (
+            <label>
+              License Plate
+              <input
+                type="text"
+                name="licensePlate"
+                placeholder="AB-1234"
+                required
+                value={form.licensePlate}
+                onChange={handleChange}
+              />
+            </label>
+          )}
           <button className="primary-btn" type="submit" disabled={status.state === 'loading'}>
             {status.state === 'loading' ? 'Submitting...' : 'Sign up'}
           </button>

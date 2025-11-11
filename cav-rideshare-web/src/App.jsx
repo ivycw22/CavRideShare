@@ -1,16 +1,36 @@
-import { Link, Route, Routes } from 'react-router-dom'
+import { useEffect, useState } from 'react'
+import { NavLink, Route, Routes, useNavigate } from 'react-router-dom'
 import Home from './pages/Home.jsx'
 import Login from './pages/Login.jsx'
 import Signup from './pages/Signup.jsx'
+import Profile from './pages/Profile.jsx'
 import './App.css'
 
 const navLinks = [
   { path: '/', label: 'Home' },
+  { path: '/profile', label: 'Profile' },
   { path: '/login', label: 'Login' },
   { path: '/signup', label: 'Sign Up' },
 ]
 
 function App() {
+  const [isAuthenticated, setIsAuthenticated] = useState(
+    Boolean(localStorage.getItem('cavrideshare_token')),
+  )
+  const navigate = useNavigate()
+
+  useEffect(() => {
+    const onStorage = () => setIsAuthenticated(Boolean(localStorage.getItem('cavrideshare_token')))
+    window.addEventListener('storage', onStorage)
+    return () => window.removeEventListener('storage', onStorage)
+  }, [])
+
+  const handleLogout = () => {
+    localStorage.removeItem('cavrideshare_token')
+    setIsAuthenticated(false)
+    navigate('/')
+  }
+
   return (
     <div className="app-shell">
       <header className="app-header">
@@ -21,11 +41,28 @@ function App() {
           </div>
         </div>
         <nav className="app-nav">
-          {navLinks.map((link) => (
-            <Link key={link.path} to={link.path}>
-              {link.label}
-            </Link>
-          ))}
+          <NavLink to="/" className={({ isActive }) => (isActive ? 'active' : undefined)}>
+            Home
+          </NavLink>
+          {isAuthenticated ? (
+            <>
+              <NavLink to="/profile" className={({ isActive }) => (isActive ? 'active' : undefined)}>
+                Profile
+              </NavLink>
+              <button className="secondary-btn" onClick={handleLogout} type="button">
+                Logout
+              </button>
+            </>
+          ) : (
+            <>
+              <NavLink to="/login" className={({ isActive }) => (isActive ? 'active' : undefined)}>
+                Login
+              </NavLink>
+              <NavLink to="/signup" className={({ isActive }) => (isActive ? 'active' : undefined)}>
+                Sign Up
+              </NavLink>
+            </>
+          )}
         </nav>
       </header>
       <main className="app-main">
@@ -33,6 +70,7 @@ function App() {
           <Route path="/" element={<Home />} />
           <Route path="/login" element={<Login />} />
           <Route path="/signup" element={<Signup />} />
+          <Route path="/profile" element={<Profile />} />
         </Routes>
       </main>
       <footer className="app-footer">

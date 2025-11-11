@@ -234,3 +234,89 @@
     font-size: 2rem;
   }
 }
+
+/* Enhanced UI: inputs, nav and profile/trip list styles */
+.app-nav a.active {
+  background: var(--uva-blue);
+  color: #fff;
+}
+
+.brand-mark {
+  width: 48px;
+  height: 48px;
+  background: linear-gradient(180deg, var(--uva-blue), #12142a);
+  border-radius: 12px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+  font-weight: 700;
+  box-shadow: 0 6px 18px rgba(35, 45, 75, 0.12);
+}
+
+input:focus,
+textarea:focus,
+select:focus {
+  outline: none;
+  box-shadow: 0 6px 18px rgba(35, 45, 75, 0.06);
+  border-color: rgba(35, 45, 75, 0.18);
+}
+
+.profile-page {
+  width: min(100%, 960px);
+}
+
+.trip-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 1rem;
+}
+
+.trip-item {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  padding: 1rem;
+  border-radius: 12px;
+  border: 1px solid #e6eef8;
+  background: linear-gradient(180deg, #ffffff, #fbfdff);
+}
+
+.trip-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 1rem;
+}
+
+.trip-header strong {
+  background: rgba(35, 45, 75, 0.06);
+  color: var(--uva-blue);
+  padding: 0.25rem 0.5rem;
+  border-radius: 6px;
+  font-size: 0.85rem;
+}
+
+.trip-time {
+  color: #6b7280;
+  font-size: 0.9rem;
+}
+
+.trip-body {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.5rem 1.5rem;
+  align-items: start;
+}
+
+.trip-body div {
+  color: #111827;
+}
+
+@media (max-width: 720px) {
+  .trip-body {
+    grid-template-columns: 1fr;
+  }
+}

@@ -3,12 +3,26 @@ import { useMemo, useState } from 'react'
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:4000'
 
 const initialTripPayload = {
-  origin: '',
-  destination: '',
+  startLocationId: '',
+  arrivalLocationId: '',
   departureTime: '',
   seatsAvailable: 1,
   notes: '',
 }
+
+// Common UVA locations from the database
+const LOCATIONS = [
+  { id: 1, name: 'UVA Rotunda' },
+  { id: 2, name: 'The Corner' },
+  { id: 3, name: 'AFC' },
+  { id: 4, name: 'JPJ Arena' },
+  { id: 5, name: 'Amtrak Station' },
+  { id: 6, name: 'Barracks Road' },
+  { id: 7, name: 'Darden' },
+  { id: 8, name: 'UVA Hospital' },
+  { id: 9, name: 'Aldi 5th St' },
+  { id: 10, name: 'Fashion Square' },
+]
 
 function Home() {
   const [isFormVisible, setFormVisible] = useState(false)
@@ -33,7 +47,9 @@ function Home() {
     const { name, value } = event.target
     setTripPayload((prev) => ({
       ...prev,
-      [name]: name === 'seatsAvailable' ? Number(value) : value,
+      [name]: ['seatsAvailable', 'startLocationId', 'arrivalLocationId'].includes(name)
+        ? Number(value)
+        : value,
     }))
   }
 
@@ -103,24 +119,36 @@ function Home() {
         <form className="trip-form" onSubmit={handleSubmit}>
           <h2>New Trip</h2>
           <label>
-            Origin
-            <input
-              name="origin"
-              placeholder="UVA Library"
+            Start Location
+            <select
+              name="startLocationId"
               required
-              value={tripPayload.origin}
+              value={tripPayload.startLocationId}
               onChange={handleChange}
-            />
+            >
+              <option value="">Select a location</option>
+              {LOCATIONS.map((loc) => (
+                <option key={loc.id} value={loc.id}>
+                  {loc.name}
+                </option>
+              ))}
+            </select>
           </label>
           <label>
-            Destination
-            <input
-              name="destination"
-              placeholder="Downtown Mall"
+            Arrival Location
+            <select
+              name="arrivalLocationId"
               required
-              value={tripPayload.destination}
+              value={tripPayload.arrivalLocationId}
               onChange={handleChange}
-            />
+            >
+              <option value="">Select a location</option>
+              {LOCATIONS.map((loc) => (
+                <option key={loc.id} value={loc.id}>
+                  {loc.name}
+                </option>
+              ))}
+            </select>
           </label>
           <label>
             Departure Time
