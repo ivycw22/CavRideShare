@@ -1,19 +1,5 @@
 # CavRideShare
 
-Full‑stack rideshare starter built with:
-
-- **React + Vite** in `cav-rideshare-web`
-- **Express + MySQL** in `cav-rideshare-api`
-- **Role Based Access Control (RBAC)** enforced via JWT + MySQL roles
-
-## Project structure
-
-```
-.
-├── cav-rideshare-web      # React SPA (login page + new trip workflow)
-└── cav-rideshare-api      # Express API with RBAC + MySQL connectivity
-```
-
 ## Backend setup (MySQL + RBAC)
 
 1. Create a database (default name `cavrideshare`).
