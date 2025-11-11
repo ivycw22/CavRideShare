@@ -92,5 +92,3 @@ VITE_API_BASE_URL=http://localhost:4000
 2. Backend checks MySQL (`users` table) and issues a JWT with the user’s role claim.
 3. The frontend stores the JWT (localStorage, cookie, etc.) and sets the `Authorization: Bearer <token>` header for any privileged requests.
 4. Protected routes (`/api/trips`) apply `authenticate` + `authorizeRoles(...)`, ensuring only drivers/admins can create trips.
-
-This repo is intentionally barebones—perfect for your Milestone / project write‑ups—while still showing how React, Express, and MySQL hang together. Extend from here by adding trip search, rider booking, notifications, etc.
