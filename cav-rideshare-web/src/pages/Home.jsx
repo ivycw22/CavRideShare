@@ -50,7 +50,11 @@ function Home() {
       title: 'Share the ride, cut the cost.',
       subtitle:
         'Post a trip, pick up classmates, and get to Grounds faster with CavRideShare.',
-      primaryLabel: 'New Trip',
+      actions: [
+        { label: 'New Trip', primary: true },
+        { label: 'Log In', href: '/login', primary: false },
+        { label: 'Sign Up', href: '/signup', primary: false },
+      ],
     }),
     [],
   )
