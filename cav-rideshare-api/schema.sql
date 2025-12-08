@@ -142,7 +142,7 @@ END IF;
 END$$
 DELIMITER ;
 
-SET @DB = 'wyb4kk';
+SET @DB = 'wyb4kk_c';
 SET @APPUSER = 'wyb4kk_c';
 SET @DEV1 = 'wyb4kk_a';
 SET @DEV2 = 'wyb4kk_b';
