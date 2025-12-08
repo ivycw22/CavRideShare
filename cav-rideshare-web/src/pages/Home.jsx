@@ -50,11 +50,7 @@ function Home() {
       title: 'Share the ride, cut the cost.',
       subtitle:
         'Post a trip, pick up classmates, and get to Grounds faster with CavRideShare.',
-      actions: [
-        { label: 'New Trip', primary: true },
-        { label: 'Log In', href: '/login', primary: false },
-        { label: 'Sign Up', href: '/signup', primary: false },
-      ],
+      primaryLabel: 'New Trip',
     }),
     [],
   )
@@ -234,14 +230,8 @@ function Home() {
               setTripPayload(initialTripPayload)
             }}
           >
-            {isFormVisible ? 'Close Trip Form' : heroCTA.actions[0].label}
+            {isFormVisible ? 'Close Trip Form' : heroCTA.primaryLabel}
           </button>
-          <a className="secondary-btn" href={heroCTA.actions[1].href}>
-            {heroCTA.actions[1].label}
-          </a>
-          <a className="secondary-btn" href={heroCTA.actions[2].href}>
-            {heroCTA.actions[2].label}
-          </a>
         </div>
       </div>
 

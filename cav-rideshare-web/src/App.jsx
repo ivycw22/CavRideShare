@@ -35,7 +35,6 @@ function App() {
     <div className="app-shell">
       <header className="app-header">
         <div className="brand">
-          <span className="brand-mark"></span>
           <div>
             <p className="brand-title">CavRideShare</p>
           </div>

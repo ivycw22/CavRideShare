@@ -19,10 +19,6 @@
   align-items: center;
 }
 
-.brand-mark {
-  font-size: 2.5rem;
-}
-
 .brand-title {
   margin: 0;
   font-size: 1.4rem;
@@ -326,19 +322,6 @@
 .app-nav a.active {
   background: var(--uva-blue);
   color: #fff;
-}
-
-.brand-mark {
-  width: 48px;
-  height: 48px;
-  background: linear-gradient(180deg, var(--uva-blue), #12142a);
-  border-radius: 12px;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  color: #fff;
-  font-weight: 700;
-  box-shadow: 0 6px 18px rgba(35, 45, 75, 0.12);
 }
 
 input:focus,
