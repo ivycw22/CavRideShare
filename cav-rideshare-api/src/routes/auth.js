@@ -27,19 +27,16 @@ router.post('/signup', async (req, res) => {
     }
 
     const passwordHash = await bcrypt.hash(password, 10)
-    
-    // Insert user into User table
+
     await pool.execute(
-      `INSERT INTO User (uva_id, fname, lname, phone_number)
-       VALUES (?, ?, ?, ?)`,
-      [uvaId, fname, lname, phoneNumber],
+      `INSERT INTO User (uva_id, fname, lname, phone_number, password_hash)
+       VALUES (?, ?, ?, ?, ?)`,
+      [uvaId, fname, lname, phoneNumber, passwordHash],
     )
 
-    // If role is driver, insert into Driver table (requires license plate)
     if (role === 'driver') {
       const { licensePlate } = req.body
       if (!licensePlate) {
-        // Clean up the user entry if driver setup fails
         await pool.execute('DELETE FROM User WHERE uva_id = ?', [uvaId])
         return res.status(400).json({ message: 'License plate is required for driver accounts' })
       }
@@ -81,7 +78,7 @@ router.post('/login', async (req, res) => {
 
   try {
     const [rows] = await pool.execute(
-      'SELECT uva_id, fname, lname, phone_number FROM User WHERE uva_id = ? LIMIT 1',
+      'SELECT uva_id, fname, lname, phone_number, password_hash FROM User WHERE uva_id = ? LIMIT 1',
       [uvaId],
     )
 
@@ -90,18 +87,18 @@ router.post('/login', async (req, res) => {
     }
 
     const user = rows[0]
-    
-    // Determine if user is a driver
+    const isValidPassword = await bcrypt.compare(password, user.password_hash || '')
+
+    if (!isValidPassword) {
+      return res.status(401).json({ message: 'Invalid UVA ID or password' })
+    }
+
     const [driverRows] = await pool.execute(
       'SELECT uva_id FROM Driver WHERE uva_id = ? LIMIT 1',
       [uvaId],
     )
     const role = driverRows.length > 0 ? 'driver' : 'rider'
 
-    // Note: The new schema doesn't store password hashes in the User table
-    // You may want to add a password_hash column to the User table if needed
-    // For now, we'll skip password validation
-    
     const token = jwt.sign(
       { sub: user.uva_id, role, fname: user.fname, lname: user.lname },
       process.env.JWT_SECRET || 'dev-secret',
@@ -119,7 +116,6 @@ router.post('/login', async (req, res) => {
       },
     })
   } catch (error) {
-    // Surface configuration issues quickly without leaking implementation details.
     console.error('Failed to log in', error)
     return res
       .status(500)

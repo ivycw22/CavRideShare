@@ -38,7 +38,7 @@ function Login() {
         localStorage.setItem('cavrideshare_token', payload.token)
         if (payload.user || payload.role) {
           const userMeta = {
-            id: payload.user?.id || payload.user?.uva_id || payload.user?.email,
+            id: payload.user?.uvaId || payload.user?.uva_id || payload.user?.id,
             role: payload.role,
           }
           localStorage.setItem('cavrideshare_user', JSON.stringify(userMeta))

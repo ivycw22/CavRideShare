@@ -57,7 +57,6 @@ function Profile() {
         throw new Error(body.message || 'Failed to cancel booking')
       }
 
-      // Remove the cancelled trip from the UI
       setTrips((prev) => prev.filter((t) => !(t.trip_id === tripId && t.role === 'rider')))
       setStatus({ state: 'success', message: 'Booking cancelled.' })
     } catch (err) {

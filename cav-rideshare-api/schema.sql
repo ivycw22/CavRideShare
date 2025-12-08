@@ -115,3 +115,122 @@ SELECT 'Trip is full' AS message;
 END IF;
 END$$
 DELIMITER ;
+
+SET @DB = 'wyb4kk';
+SET @APPUSER = 'wyb4kk_c';
+SET @DEV1 = 'wyb4kk_a';
+SET @DEV2 = 'wyb4kk_b';
+
+SET @sql = CONCAT('USE `', @DB, '`'); 
+PREPARE s FROM @sql; EXECUTE s; DEALLOCATE PREPARE s;
+
+DROP VIEW IF EXISTS v_trips_public;
+CREATE VIEW v_trips_public AS
+SELECT 
+  t.trip_id,
+  t.departure_time,
+  t.seats_available,
+  t.notes,
+  sl.name AS start_location_name,
+  al.name AS arrival_location_name
+FROM Trips t
+JOIN Location sl ON sl.location_id = t.start_location
+JOIN Location al ON al.location_id = t.arrival_location;
+
+DROP VIEW IF EXISTS v_reviews_public;
+CREATE VIEW v_reviews_public AS
+SELECT r.review_id, r.trip_id, r.stars, r.comment
+FROM Reviews r;
+
+DROP PROCEDURE IF EXISTS sp_book_trip;
+DELIMITER $$
+CREATE PROCEDURE sp_book_trip(IN p_rider VARCHAR(6), IN p_trip INT)
+SQL SECURITY DEFINER
+BEGIN
+  DECLARE v_remaining INT DEFAULT NULL;
+  DECLARE v_exists INT DEFAULT 0;
+
+  START TRANSACTION;
+
+  SELECT seats_available INTO v_remaining
+  FROM Trips
+  WHERE trip_id = p_trip
+  FOR UPDATE;
+
+  IF v_remaining IS NULL THEN
+    ROLLBACK;
+    SELECT 'Trip not found' AS message;
+    LEAVE proc_end;
+  END IF;
+
+  SELECT COUNT(*) INTO v_exists
+  FROM Rides_In
+  WHERE uva_id = p_rider AND trip_id = p_trip
+  FOR UPDATE;
+
+  IF v_exists > 0 THEN
+    ROLLBACK;
+    SELECT 'Already booked' AS message;
+    LEAVE proc_end;
+  END IF;
+
+  IF v_remaining > 0 THEN
+    INSERT INTO Rides_In(uva_id, trip_id) VALUES (p_rider, p_trip);
+    UPDATE Trips SET seats_available = seats_available - 1 WHERE trip_id = p_trip;
+    COMMIT;
+    SELECT 'Booked' AS message;
+  ELSE
+    ROLLBACK;
+    SELECT 'Trip is full' AS message;
+  END IF;
+
+  proc_end: BEGIN END;
+END$$
+DELIMITER ;
+
+DROP TABLE IF EXISTS Reviews_audit;
+CREATE TABLE Reviews_audit (
+  log_ts TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  who VARCHAR(128) NOT NULL,
+  review_id INT NOT NULL,
+  old_stars INT,
+  new_stars INT
+);
+
+DROP TRIGGER IF EXISTS trg_reviews_audit;
+DELIMITER $$
+CREATE TRIGGER trg_reviews_audit
+BEFORE UPDATE ON Reviews
+FOR EACH ROW
+BEGIN
+  IF NOT (OLD.stars <=> NEW.stars) THEN
+    INSERT INTO Reviews_audit(who, review_id, old_stars, new_stars)
+    VALUES (CURRENT_USER(), OLD.review_id, OLD.stars, NEW.stars);
+  END IF;
+END$$
+DELIMITER ;
+
+SET @g1 = CONCAT('GRANT SELECT, INSERT, UPDATE, DELETE, CREATE, ALTER, INDEX, DROP ON `', @DB, '`.* TO ''', @DEV1, '''@"%"');
+SET @g2 = CONCAT('GRANT SELECT, INSERT, UPDATE, DELETE, CREATE, ALTER, INDEX, DROP ON `', @DB, '`.* TO ''', @DEV2, '''@"%"');
+PREPARE g1 FROM @g1; EXECUTE g1; DEALLOCATE PREPARE g1;
+PREPARE g2 FROM @g2; EXECUTE g2; DEALLOCATE PREPARE g2;
+
+SET @rv1 = CONCAT('REVOKE ALL PRIVILEGES, GRANT OPTION FROM ''', @APPUSER, '''@"%"');
+PREPARE rv1 FROM @rv1; EXECUTE rv1; DEALLOCATE PREPARE rv1;
+
+SET @ga1 = CONCAT('GRANT SELECT ON `', @DB, '`.v_trips_public TO ''', @APPUSER, '''@"%"');
+SET @ga2 = CONCAT('GRANT SELECT ON `', @DB, '`.v_reviews_public TO ''', @APPUSER, '''@"%"');
+SET @ga3 = CONCAT('GRANT EXECUTE ON PROCEDURE `', @DB, '`.sp_book_trip TO ''', @APPUSER, '''@"%"');
+
+PREPARE ga1 FROM @ga1; EXECUTE ga1; DEALLOCATE PREPARE ga1;
+PREPARE ga2 FROM @ga2; EXECUTE ga2; DEALLOCATE PREPARE ga2;
+PREPARE ga3 FROM @ga3; EXECUTE ga3; DEALLOCATE PREPARE ga3;
+
+SET @sg1 = CONCAT('SHOW GRANTS FOR ''', @DEV1, '''@"%"'); 
+PREPARE sg1 FROM @sg1; EXECUTE sg1; DEALLOCATE PREPARE sg1;
+
+SET @sg2 = CONCAT('SHOW GRANTS FOR ''', @DEV2, '''@"%"'); 
+PREPARE sg2 FROM @sg2; EXECUTE sg2; DEALLOCATE PREPARE sg2;
+
+SET @sg3 = CONCAT('SHOW GRANTS FOR ''', @APPUSER, '''@"%"'); 
+PREPARE sg3 FROM @sg3; EXECUTE sg3; DEALLOCATE PREPARE sg3;

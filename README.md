@@ -7,6 +7,10 @@
    ```sql
    SOURCE cav-rideshare-api/schema.sql;
    ```
+   Add password storage for login:
+   ```sql
+   ALTER TABLE User ADD COLUMN password_hash VARCHAR(255) NOT NULL AFTER phone_number;
+   ```
 3. Create at least one user:
    - **API option (recommended):** `POST http://localhost:4000/api/auth/signup` with `{ email, password, role }`.
    - **SQL option:** hash the password manually

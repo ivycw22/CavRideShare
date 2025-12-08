@@ -68,8 +68,9 @@ function Signup() {
         localStorage.setItem('cavrideshare_token', responsePayload.token)
         const userMeta = {
           id:
-            responsePayload.user?.id ||
+            responsePayload.user?.uvaId ||
             responsePayload.user?.uva_id ||
+            responsePayload.user?.id ||
             responsePayload.user?.email ||
             form.uvaId,
           role: responsePayload.role || form.role,
