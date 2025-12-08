@@ -5,6 +5,33 @@ const { authenticate, authorizeRoles } = require('../middleware/auth')
 const router = express.Router()
 
 router.get('/', authenticate, async (req, res) => {
+  const { startLocationId, arrivalLocationId, after, before, minSeats } = req.query
+  const conditions = []
+  const params = []
+
+  if (startLocationId) {
+    conditions.push('t.start_location = ?')
+    params.push(startLocationId)
+  }
+  if (arrivalLocationId) {
+    conditions.push('t.arrival_location = ?')
+    params.push(arrivalLocationId)
+  }
+  if (after) {
+    conditions.push('t.departure_time >= ?')
+    params.push(after)
+  }
+  if (before) {
+    conditions.push('t.departure_time <= ?')
+    params.push(before)
+  }
+  if (minSeats) {
+    conditions.push('t.seats_available >= ?')
+    params.push(minSeats)
+  }
+
+  const whereClause = conditions.length ? `WHERE ${conditions.join(' AND ')}` : ''
+
   try {
     const [rows] = await pool.execute(
       `SELECT t.trip_id, t.departure_time, t.arrival_time, t.trip_duration,
@@ -16,7 +43,9 @@ router.get('/', authenticate, async (req, res) => {
        LEFT JOIN Location l1 ON t.start_location = l1.location_id
        LEFT JOIN Location l2 ON t.arrival_location = l2.location_id
        LEFT JOIN Drives d ON t.trip_id = d.trip_id
+       ${whereClause}
        ORDER BY t.departure_time ASC`,
+      params,
     )
     res.json(rows)
   } catch (error) {
@@ -28,7 +57,7 @@ router.get('/', authenticate, async (req, res) => {
 router.post(
   '/',
   authenticate,
-  authorizeRoles('driver'),
+  authorizeRoles('driver', 'admin'),
   async (req, res) => {
     const { startLocationId, arrivalLocationId, departureTime, seatsAvailable, notes } = req.body
 
@@ -37,17 +66,17 @@ router.post(
     }
 
     try {
-      // Verify the driver exists in the Driver table
-      const [driverCheck] = await pool.execute(
-        'SELECT uva_id FROM Driver WHERE uva_id = ?',
-        [req.user.sub],
-      )
+      if (req.user.role !== 'admin') {
+        const [driverCheck] = await pool.execute(
+          'SELECT uva_id FROM Driver WHERE uva_id = ?',
+          [req.user.sub],
+        )
 
-      if (driverCheck.length === 0) {
-        return res.status(403).json({ message: 'User is not registered as a driver' })
+        if (driverCheck.length === 0) {
+          return res.status(403).json({ message: 'User is not registered as a driver' })
+        }
       }
 
-      // Verify locations exist
       const [startLoc] = await pool.execute(
         'SELECT location_id FROM Location WHERE location_id = ?',
         [startLocationId],
@@ -61,7 +90,6 @@ router.post(
         return res.status(400).json({ message: 'Start location or arrival location does not exist' })
       }
 
-      // Create the trip
       const [result] = await pool.execute(
         `INSERT INTO Trips (departure_time, arrival_location, seats_available, notes, start_location)
          VALUES (?, ?, ?, ?, ?)`,
@@ -74,7 +102,6 @@ router.post(
         ],
       )
 
-      // Link driver to trip
       await pool.execute(
         'INSERT INTO Drives (uva_id, trip_id) VALUES (?, ?)',
         [req.user.sub, result.insertId],
@@ -96,7 +123,6 @@ router.post(
   },
 )
 
-// Book a trip (rider joins a trip)
 router.post(
   '/:tripId/book',
   authenticate,
@@ -104,7 +130,6 @@ router.post(
     const { tripId } = req.params
 
     try {
-      // Verify trip exists
       const [tripCheck] = await pool.execute(
         'SELECT trip_id, seats_available FROM Trips WHERE trip_id = ?',
         [tripId],
@@ -117,12 +142,10 @@ router.post(
       const trip = tripCheck[0]
 
 
-      // Check if seats available
       if (trip.seats_available <= 0) {
         return res.status(400).json({ message: 'No seats available on this trip' })
       }
 
-      // Check if already booked
       const [existingBooking] = await pool.execute(
         'SELECT uva_id FROM Rides_In WHERE uva_id = ? AND trip_id = ?',
         [req.user.sub, tripId],
@@ -132,13 +155,11 @@ router.post(
         return res.status(409).json({ message: 'Already booked on this trip' })
       }
 
-      // Book the trip
       await pool.execute(
         'INSERT INTO Rides_In (uva_id, trip_id) VALUES (?, ?)',
         [req.user.sub, tripId],
       )
 
-      // Decrement available seats
       await pool.execute(
         'UPDATE Trips SET seats_available = seats_available - 1 WHERE trip_id = ?',
         [tripId],
@@ -152,7 +173,6 @@ router.post(
   },
 )
 
-// Get trips for the authenticated user (driver or rider)
 router.get('/mine', authenticate, async (req, res) => {
   const uvaId = req.user.sub
 
@@ -195,13 +215,11 @@ router.get('/mine', authenticate, async (req, res) => {
   }
 })
 
-// Cancel a booking for the authenticated user (rider)
 router.delete('/:tripId/book', authenticate, async (req, res) => {
   const { tripId } = req.params
   const uvaId = req.user.sub
 
   try {
-    // Remove the booking
     const [delResult] = await pool.execute(
       'DELETE FROM Rides_In WHERE uva_id = ? AND trip_id = ?',
       [uvaId, tripId],
@@ -211,7 +229,6 @@ router.delete('/:tripId/book', authenticate, async (req, res) => {
       return res.status(404).json({ message: 'Booking not found' })
     }
 
-    // Increment seats available
     await pool.execute('UPDATE Trips SET seats_available = seats_available + 1 WHERE trip_id = ?', [tripId])
 
     return res.json({ message: 'Booking cancelled' })
@@ -220,5 +237,110 @@ router.delete('/:tripId/book', authenticate, async (req, res) => {
     return res.status(500).json({ message: 'Unable to cancel booking' })
   }
 })
+
+router.put(
+  '/:tripId',
+  authenticate,
+  authorizeRoles('driver', 'admin'),
+  async (req, res) => {
+    const { tripId } = req.params
+    const { startLocationId, arrivalLocationId, departureTime, seatsAvailable, notes } = req.body
+
+    if (!startLocationId || !arrivalLocationId || !departureTime || seatsAvailable === undefined) {
+      return res
+        .status(400)
+        .json({ message: 'Missing required trip fields: startLocationId, arrivalLocationId, departureTime, seatsAvailable' })
+    }
+
+    try {
+      const [tripRows] = await pool.execute(
+        'SELECT d.uva_id FROM Trips t JOIN Drives d ON t.trip_id = d.trip_id WHERE t.trip_id = ? LIMIT 1',
+        [tripId],
+      )
+
+      if (tripRows.length === 0) {
+        return res.status(404).json({ message: 'Trip not found' })
+      }
+
+      const driverId = tripRows[0].uva_id
+      const isOwner = driverId === req.user.sub
+      const isAdmin = req.user.role === 'admin'
+
+      if (!isOwner && !isAdmin) {
+        return res.status(403).json({ message: 'You cannot edit this trip' })
+      }
+
+      const [startLoc] = await pool.execute(
+        'SELECT location_id FROM Location WHERE location_id = ?',
+        [startLocationId],
+      )
+      const [arrivalLoc] = await pool.execute(
+        'SELECT location_id FROM Location WHERE location_id = ?',
+        [arrivalLocationId],
+      )
+
+      if (startLoc.length === 0 || arrivalLoc.length === 0) {
+        return res.status(400).json({ message: 'Start location or arrival location does not exist' })
+      }
+
+      await pool.execute(
+        `UPDATE Trips
+         SET departure_time = ?, arrival_location = ?, seats_available = ?, notes = ?, start_location = ?
+         WHERE trip_id = ?`,
+        [departureTime, arrivalLocationId, seatsAvailable, notes || null, startLocationId, tripId],
+      )
+
+      res.json({
+        trip_id: Number(tripId),
+        driver_id: driverId,
+        start_location_id: startLocationId,
+        arrival_location_id: arrivalLocationId,
+        departure_time: departureTime,
+        seats_available: seatsAvailable,
+        notes: notes || null,
+      })
+    } catch (error) {
+      console.error('Failed to update trip', error)
+      res.status(500).json({ message: 'Unable to update trip' })
+    }
+  },
+)
+
+router.delete(
+  '/:tripId',
+  authenticate,
+  authorizeRoles('driver', 'admin'),
+  async (req, res) => {
+    const { tripId } = req.params
+
+    try {
+      const [tripRows] = await pool.execute(
+        'SELECT d.uva_id FROM Trips t JOIN Drives d ON t.trip_id = d.trip_id WHERE t.trip_id = ? LIMIT 1',
+        [tripId],
+      )
+
+      if (tripRows.length === 0) {
+        return res.status(404).json({ message: 'Trip not found' })
+      }
+
+      const driverId = tripRows[0].uva_id
+      const isOwner = driverId === req.user.sub
+      const isAdmin = req.user.role === 'admin'
+
+      if (!isOwner && !isAdmin) {
+        return res.status(403).json({ message: 'You cannot delete this trip' })
+      }
+
+      await pool.execute('DELETE FROM Rides_In WHERE trip_id = ?', [tripId])
+      await pool.execute('DELETE FROM Drives WHERE trip_id = ?', [tripId])
+      await pool.execute('DELETE FROM Trips WHERE trip_id = ?', [tripId])
+
+      res.json({ message: 'Trip deleted', id: Number(tripId) })
+    } catch (error) {
+      console.error('Failed to delete trip', error)
+      res.status(500).json({ message: 'Unable to delete trip' })
+    }
+  },
+)
 
 module.exports = router

@@ -66,6 +66,15 @@ function Signup() {
       const responsePayload = await response.json()
       if (responsePayload.token) {
         localStorage.setItem('cavrideshare_token', responsePayload.token)
+        const userMeta = {
+          id:
+            responsePayload.user?.id ||
+            responsePayload.user?.uva_id ||
+            responsePayload.user?.email ||
+            form.uvaId,
+          role: responsePayload.role || form.role,
+        }
+        localStorage.setItem('cavrideshare_user', JSON.stringify(userMeta))
         setTokenPreview(responsePayload.token)
       }
 

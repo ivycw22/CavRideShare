@@ -36,6 +36,13 @@ function Login() {
       const payload = await response.json()
       if (payload.token) {
         localStorage.setItem('cavrideshare_token', payload.token)
+        if (payload.user || payload.role) {
+          const userMeta = {
+            id: payload.user?.id || payload.user?.uva_id || payload.user?.email,
+            role: payload.role,
+          }
+          localStorage.setItem('cavrideshare_user', JSON.stringify(userMeta))
+        }
         setTokenPreview(payload.token)
       } else {
         setTokenPreview('Token will be returned by the backend.')

@@ -66,6 +66,14 @@ Key screens:
 - **Login** – posts to `/api/auth/login`, displays the returned JWT, and saves it to `localStorage` for later API calls.
 - **Sign Up** – lets you create a rider or driver account using the Express API and immediately stores the returned JWT for testing.
 
+Trip endpoints (CRUD + RBAC):
+- `GET /api/trips` – list trips (auth required)
+- Optional query parameters on `GET /api/trips` for filtering: `startLocationId`, `arrivalLocationId`, `after`, `before`, `minSeats`
+- `POST /api/trips` – create trip (driver/admin, uses `startLocationId`, `arrivalLocationId`, `departureTime`, `seatsAvailable`, `notes`)
+- `PUT /api/trips/:tripId` – update trip (driver owner or admin)
+- `DELETE /api/trips/:tripId` – delete trip (driver owner or admin)
+- `GET /api/locations` – list locations for the trip form
+
 To point the UI at a different backend, create `cav-rideshare-web/.env`:
 
 ```

@@ -3,6 +3,7 @@ const express = require('express')
 const cors = require('cors')
 const authRouter = require('./routes/auth')
 const tripRouter = require('./routes/trips')
+const locationRouter = require('./routes/locations')
 
 const app = express()
 const PORT = process.env.PORT || 4000
@@ -21,6 +22,7 @@ app.get('/api/health', (req, res) => {
 
 app.use('/api/auth', authRouter)
 app.use('/api/trips', tripRouter)
+app.use('/api/locations', locationRouter)
 
 app.use((_, res) => {
   res.status(404).json({ message: 'Route not found' })
