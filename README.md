@@ -12,14 +12,14 @@
    ALTER TABLE User ADD COLUMN password_hash VARCHAR(255) NOT NULL AFTER phone_number;
    ```
 3. Create at least one user:
-   - **API option (recommended):** `POST http://localhost:4000/api/auth/signup` with `{ email, password, role }`.
+   - **API option (recommended):** `POST http://localhost:4000/api/auth/signup` with `{ uvaId, password, role }`.
    - **SQL option:** hash the password manually
      ```bash
      node -e "console.log(require('bcryptjs').hashSync('change-me', 10))"
      ```
      ```sql
-     INSERT INTO users (email, password_hash, role)
-     VALUES ('driver@virginia.edu', '<hash-from-above>', 'driver');
+     INSERT INTO User (uva_id, fname, lname, phone_number, password_hash)
+     VALUES ('ab123c','Ava','Kim','8045551234','<hash-from-above>');
      ```
 4. Copy environment variables:
    ```bash

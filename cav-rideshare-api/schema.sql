@@ -1,4 +1,10 @@
-CREATE TABLE User (uva_id VARCHAR(6) PRIMARY KEY, fname VARCHAR(255) NOT NULL, lname VARCHAR(255) NOT NULL, phone_number VARCHAR(15) UNIQUE NOT NULL);
+CREATE TABLE User (
+  uva_id VARCHAR(6) PRIMARY KEY,
+  fname VARCHAR(255) NOT NULL,
+  lname VARCHAR(255) NOT NULL,
+  phone_number VARCHAR(15) UNIQUE NOT NULL,
+  password_hash VARCHAR(255) NOT NULL
+);
 CREATE TABLE Driver (uva_id VARCHAR(6) PRIMARY KEY, license_plate VARCHAR(8) UNIQUE NOT NULL, FOREIGN KEY (uva_id) REFERENCES User(uva_id));
 CREATE TABLE Car (license_plate VARCHAR(20) PRIMARY KEY, user_id VARCHAR(6) NOT NULL, make VARCHAR(50) NOT NULL, model VARCHAR(50) NOT NULL, mpg DECIMAL(5,2), max_passengers INT NOT NULL, FOREIGN KEY (user_id) REFERENCES User(uva_id));
 CREATE TABLE Location (location_id INT PRIMARY KEY, name VARCHAR(255) NOT NULL, address VARCHAR(255), lat DECIMAL(9,6) NOT NULL, lng DECIMAL(9,6) NOT NULL);
@@ -9,7 +15,27 @@ CREATE TABLE Drives (uva_id VARCHAR(6) NOT NULL, trip_id INT NOT NULL, PRIMARY K
 CREATE TABLE Rides_In (uva_id VARCHAR(6) NOT NULL, trip_id INT NOT NULL, PRIMARY KEY (uva_id, trip_id), FOREIGN KEY (uva_id) REFERENCES User(uva_id), FOREIGN KEY (trip_id) REFERENCES Trips(trip_id));
 CREATE TABLE Contains (trip_id INT NOT NULL, location_id INT NOT NULL, PRIMARY KEY (trip_id, location_id), FOREIGN KEY (trip_id) REFERENCES Trips(trip_id), FOREIGN KEY (location_id) REFERENCES Location(location_id)); 
 
-INSERT INTO `User` (uva_id, fname, lname, phone_number) VALUES ('bi2yn', 'Iris', 'Diaz', '2395889785'), ('rk6bf', 'Elena', 'Kim', '7745415016'), ('fa7yc', 'Troy', 'Miller', '2712066168'), ('xo2bc', 'Vik', 'Evans', '3292215780'), ('ns8ip', 'Ben', 'Young', '5125519547'), ('zp4tu', 'Quinne', 'Sing', '5222127524'), ('yu9nv', 'Ravi', 'Ueda', '8828108964'), ('qv7lq', 'Ben', 'Youngs', '8603852353'), ('pv5fk', 'Kira', 'Rodriguez', '6002758483'), ('ms6ag', 'Sara', 'Cho', '8435721210'), ('lh7rq', 'Xena', 'Baker', '8544949106'), ('yu4rp', 'Finn', 'Evans', '7496557202'), ('yo1ae', 'Owen', 'Gupta', '2214626767'), ('vi7un', 'Ava', 'Diaz', '8322649361'), ('lw2cn', 'Ava', 'Zhang', '7485862203'), ('rw7ak', 'Iria', 'Patel', '2339686485'), ('nl1uu', 'Finn', 'Nguyen', '2659343359'), ('lv4xc', 'Uma', 'Baker', '9767317344'), ('rj3uy', 'Jae', 'Young', '5985773072'), ('rk9du', 'Finn', 'Zhang', '8035958080');
+INSERT INTO `User` (uva_id, fname, lname, phone_number, password_hash) VALUES 
+('bi2yn', 'Iris', 'Diaz', '2395889785', '$2a$10$CwTycUXWue0Thq9StjUM0uJ8XQ/0Z1S4QhIWGAaHo9dZYkTfLZ7Cy'),
+('rk6bf', 'Elena', 'Kim', '7745415016', '$2a$10$CwTycUXWue0Thq9StjUM0uJ8XQ/0Z1S4QhIWGAaHo9dZYkTfLZ7Cy'),
+('fa7yc', 'Troy', 'Miller', '2712066168', '$2a$10$CwTycUXWue0Thq9StjUM0uJ8XQ/0Z1S4QhIWGAaHo9dZYkTfLZ7Cy'),
+('xo2bc', 'Vik', 'Evans', '3292215780', '$2a$10$CwTycUXWue0Thq9StjUM0uJ8XQ/0Z1S4QhIWGAaHo9dZYkTfLZ7Cy'),
+('ns8ip', 'Ben', 'Young', '5125519547', '$2a$10$CwTycUXWue0Thq9StjUM0uJ8XQ/0Z1S4QhIWGAaHo9dZYkTfLZ7Cy'),
+('zp4tu', 'Quinne', 'Sing', '5222127524', '$2a$10$CwTycUXWue0Thq9StjUM0uJ8XQ/0Z1S4QhIWGAaHo9dZYkTfLZ7Cy'),
+('yu9nv', 'Ravi', 'Ueda', '8828108964', '$2a$10$CwTycUXWue0Thq9StjUM0uJ8XQ/0Z1S4QhIWGAaHo9dZYkTfLZ7Cy'),
+('qv7lq', 'Ben', 'Youngs', '8603852353', '$2a$10$CwTycUXWue0Thq9StjUM0uJ8XQ/0Z1S4QhIWGAaHo9dZYkTfLZ7Cy'),
+('pv5fk', 'Kira', 'Rodriguez', '6002758483', '$2a$10$CwTycUXWue0Thq9StjUM0uJ8XQ/0Z1S4QhIWGAaHo9dZYkTfLZ7Cy'),
+('ms6ag', 'Sara', 'Cho', '8435721210', '$2a$10$CwTycUXWue0Thq9StjUM0uJ8XQ/0Z1S4QhIWGAaHo9dZYkTfLZ7Cy'),
+('lh7rq', 'Xena', 'Baker', '8544949106', '$2a$10$CwTycUXWue0Thq9StjUM0uJ8XQ/0Z1S4QhIWGAaHo9dZYkTfLZ7Cy'),
+('yu4rp', 'Finn', 'Evans', '7496557202', '$2a$10$CwTycUXWue0Thq9StjUM0uJ8XQ/0Z1S4QhIWGAaHo9dZYkTfLZ7Cy'),
+('yo1ae', 'Owen', 'Gupta', '2214626767', '$2a$10$CwTycUXWue0Thq9StjUM0uJ8XQ/0Z1S4QhIWGAaHo9dZYkTfLZ7Cy'),
+('vi7un', 'Ava', 'Diaz', '8322649361', '$2a$10$CwTycUXWue0Thq9StjUM0uJ8XQ/0Z1S4QhIWGAaHo9dZYkTfLZ7Cy'),
+('lw2cn', 'Ava', 'Zhang', '7485862203', '$2a$10$CwTycUXWue0Thq9StjUM0uJ8XQ/0Z1S4QhIWGAaHo9dZYkTfLZ7Cy'),
+('rw7ak', 'Iria', 'Patel', '2339686485', '$2a$10$CwTycUXWue0Thq9StjUM0uJ8XQ/0Z1S4QhIWGAaHo9dZYkTfLZ7Cy'),
+('nl1uu', 'Finn', 'Nguyen', '2659343359', '$2a$10$CwTycUXWue0Thq9StjUM0uJ8XQ/0Z1S4QhIWGAaHo9dZYkTfLZ7Cy'),
+('lv4xc', 'Uma', 'Baker', '9767317344', '$2a$10$CwTycUXWue0Thq9StjUM0uJ8XQ/0Z1S4QhIWGAaHo9dZYkTfLZ7Cy'),
+('rj3uy', 'Jae', 'Young', '5985773072', '$2a$10$CwTycUXWue0Thq9StjUM0uJ8XQ/0Z1S4QhIWGAaHo9dZYkTfLZ7Cy'),
+('rk9du', 'Finn', 'Zhang', '8035958080', '$2a$10$CwTycUXWue0Thq9StjUM0uJ8XQ/0Z1S4QhIWGAaHo9dZYkTfLZ7Cy');
 INSERT INTO Car(`license_plate`, `user_id`, `make`, `model`, `mpg`, `max_passengers`) VALUES ('OJ-8028', 'rk6bf', 'Subaru', 'Outback', 29, 4), ('ZY-1462', 'ns8ip', 'Honda', 'Civic', 34, 4), ('FQ-6322', 'lw2cn', 'Toyota', 'Corolla', 33, 4), ('QQ-3250', 'bi2yn', 'Subaru', 'Outback', 29, 4),('KQ-2716', 'yu4rp', 'Toyota', 'Corolla', 33, 4), ('RX-7045', 'qv7lq', 'Kia', 'Soul', 31, 4), ('HS-6571', 'vi7un', 'Honda', 'Civic', 34, 4), ('CI-9295', 'rw7ak', 'Toyota', 'Corolla', 33, 4),('HG-6276', 'yo1ae', 'Tesla', 'Model 3', 120, 4), ('IM-1704', 'lh7rq', 'Subaru', 'Outback', 29, 4);
 INSERT INTO `Location` (`location_id`, `name`, `address`, `lat`, `lng`) VALUES (1, 'UVA Rotunda', '1826 University Ave, Charlottesville, VA', 38.0356, -78.5034),
  (2, 'The Corner', '104 14th St NW, Charlottesville, VA', 38.035, -78.5008),
@@ -51,9 +77,9 @@ INSERT INTO `Rides_In` (`uva_id`, `trip_id`) VALUES ('vi7un', 20001), ('bi2yn', 
 
 INSERT INTO `Contains` (`trip_id`, `location_id`) VALUES (20007, 8), (20013, 3), (20002, 1), (20004, 3), (20017, 2), (20010, 6), (20011, 1), (20006, 2), (20012, 3), (20018, 4), (20016, 8), (20020, 7), (20003, 4), (20015, 7), (20014, 1);;
 
-INSERT INTO User (uva_id, fname, lname, phone_number) VALUES ('ab123c','Ava','Kim','8045551234');
+INSERT INTO User (uva_id, fname, lname, phone_number, password_hash) VALUES ('ab123c','Ava','Kim','8045551234','$2a$10$CwTycUXWue0Thq9StjUM0uJ8XQ/0Z1S4QhIWGAaHo9dZYkTfLZ7Cy');
  DELETE FROM User WHERE uva_id='ab123c';
- INSERT INTO User (uva_id, fname, lname, phone_number) VALUES ('ab123c','Ava','Kim','8045551234');
+ INSERT INTO User (uva_id, fname, lname, phone_number, password_hash) VALUES ('ab123c','Ava','Kim','8045551234','$2a$10$CwTycUXWue0Thq9StjUM0uJ8XQ/0Z1S4QhIWGAaHo9dZYkTfLZ7Cy');
  SELECT uva_id, fname, lname, phone_number FROM User WHERE uva_id='ab123c';
  UPDATE User SET phone_number='8045555678' WHERE uva_id='ab123c';
 INSERT INTO Driver (uva_id, license_plate) VALUES ('ab123c','UV1234VA');
