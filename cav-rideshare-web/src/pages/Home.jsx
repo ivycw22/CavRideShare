@@ -234,8 +234,14 @@ function Home() {
               setTripPayload(initialTripPayload)
             }}
           >
-            {isFormVisible ? 'Close Trip Form' : heroCTA.primaryLabel}
+            {isFormVisible ? 'Close Trip Form' : heroCTA.actions[0].label}
           </button>
+          <a className="secondary-btn" href={heroCTA.actions[1].href}>
+            {heroCTA.actions[1].label}
+          </a>
+          <a className="secondary-btn" href={heroCTA.actions[2].href}>
+            {heroCTA.actions[2].label}
+          </a>
         </div>
       </div>
 
