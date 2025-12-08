@@ -186,31 +186,25 @@ BEGIN
   IF v_remaining IS NULL THEN
     ROLLBACK;
     SELECT 'Trip not found' AS message;
-    LEAVE proc_end;
-  END IF;
-
-  SELECT COUNT(*) INTO v_exists
-  FROM Rides_In
-  WHERE uva_id = p_rider AND trip_id = p_trip
-  FOR UPDATE;
-
-  IF v_exists > 0 THEN
-    ROLLBACK;
-    SELECT 'Already booked' AS message;
-    LEAVE proc_end;
-  END IF;
-
-  IF v_remaining > 0 THEN
-    INSERT INTO Rides_In(uva_id, trip_id) VALUES (p_rider, p_trip);
-    UPDATE Trips SET seats_available = seats_available - 1 WHERE trip_id = p_trip;
-    COMMIT;
-    SELECT 'Booked' AS message;
   ELSE
-    ROLLBACK;
-    SELECT 'Trip is full' AS message;
-  END IF;
+    SELECT COUNT(*) INTO v_exists
+    FROM Rides_In
+    WHERE uva_id = p_rider AND trip_id = p_trip
+    FOR UPDATE;
 
-  proc_end: BEGIN END;
+    IF v_exists > 0 THEN
+      ROLLBACK;
+      SELECT 'Already booked' AS message;
+    ELSEIF v_remaining > 0 THEN
+      INSERT INTO Rides_In(uva_id, trip_id) VALUES (p_rider, p_trip);
+      UPDATE Trips SET seats_available = seats_available - 1 WHERE trip_id = p_trip;
+      COMMIT;
+      SELECT 'Booked' AS message;
+    ELSE
+      ROLLBACK;
+      SELECT 'Trip is full' AS message;
+    END IF;
+  END IF;
 END$$
 DELIMITER ;
 
