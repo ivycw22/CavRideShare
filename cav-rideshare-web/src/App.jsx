@@ -32,7 +32,9 @@ function App() {
 
   const handleLogout = () => {
     localStorage.removeItem('cavrideshare_token')
+    localStorage.removeItem('cavrideshare_user')
     setIsAuthenticated(false)
+    window.dispatchEvent(new Event('logout'))
     navigate('/')
   }
 

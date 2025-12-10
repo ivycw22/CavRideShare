@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:4000'
 
@@ -18,6 +19,11 @@ function Home() {
   const [locations, setLocations] = useState([])
   const [editingTripId, setEditingTripId] = useState(null)
   const [loadingTrips, setLoadingTrips] = useState(false)
+  const [joinedTrips, setJoinedTrips] = useState(new Set())
+  const [joiningTripId, setJoiningTripId] = useState(null)
+  const [isAuthenticated, setIsAuthenticated] = useState(
+    Boolean(localStorage.getItem('cavrideshare_token')),
+  )
   const [filters, setFilters] = useState({
     startLocationId: '',
     arrivalLocationId: '',
@@ -25,6 +31,7 @@ function Home() {
     after: '',
     before: '',
   })
+  const navigate = useNavigate()
 
   const storedUser = useMemo(() => {
     try {
@@ -46,17 +53,25 @@ function Home() {
   }, [])
 
   const heroCTA = useMemo(
-    () => ({
-      title: 'Share the ride, cut the cost.',
-      subtitle:
-        'Post a trip, pick up classmates, and get to Grounds faster with CavRideShare.',
-      actions: [
-        { label: 'New Trip', primary: true },
-        { label: 'Log In', href: '/login', primary: false },
-        { label: 'Sign Up', href: '/signup', primary: false },
-      ],
-    }),
-    [],
+    () => {
+      const actions = []
+      if (isAuthenticated && storedUser.role === 'driver') {
+        actions.push({ label: 'New Trip', primary: true })
+      }
+      if (!isAuthenticated) {
+        actions.push(
+          { label: 'Log In', href: '/login', primary: false },
+          { label: 'Sign Up', href: '/signup', primary: false },
+        )
+      }
+      return {
+        title: 'Share the ride, cut the cost.',
+        subtitle:
+          'Post a trip, pick up classmates, and get to Grounds faster with CavRideShare.',
+        actions,
+      }
+    },
+    [isAuthenticated, storedUser.role],
   )
 
   const locationMap = useMemo(() => {
@@ -64,6 +79,14 @@ function Home() {
     locations.forEach((loc) => map.set(loc.location_id, loc))
     return map
   }, [locations])
+
+  const futureTrips = useMemo(() => {
+    const now = new Date()
+    return trips.filter((trip) => {
+      const departureTime = new Date(trip.departure_time)
+      return departureTime > now
+    })
+  }, [trips])
 
   const canManageTrip = (trip) => {
     if (!storedUser?.role) return false
@@ -121,9 +144,46 @@ function Home() {
     }
   }
 
+  const loadUserJoinedTrips = async () => {
+    try {
+      const response = await fetchWithAuth('/api/trips/mine')
+      if (!response.ok) throw new Error('Unable to load your trips')
+      const data = await response.json()
+      const joined = new Set(
+        data.filter((trip) => trip.role === 'rider').map((trip) => trip.trip_id),
+      )
+      setJoinedTrips(joined)
+    } catch (error) {
+      console.error('Failed to load joined trips', error)
+    }
+  }
+
   useEffect(() => {
     loadLocations()
     loadTrips()
+    if (isAuthenticated) {
+      loadUserJoinedTrips()
+    }
+  }, [])
+
+  useEffect(() => {
+    const onAuthChange = () => {
+      const authenticated = Boolean(localStorage.getItem('cavrideshare_token'))
+      setIsAuthenticated(authenticated)
+      if (authenticated) {
+        loadUserJoinedTrips()
+      } else {
+        setJoinedTrips(new Set())
+      }
+    }
+    window.addEventListener('storage', onAuthChange)
+    window.addEventListener('login', onAuthChange)
+    window.addEventListener('logout', onAuthChange)
+    return () => {
+      window.removeEventListener('storage', onAuthChange)
+      window.removeEventListener('login', onAuthChange)
+      window.removeEventListener('logout', onAuthChange)
+    }
   }, [])
 
   const handleFilterChange = (event) => {
@@ -219,6 +279,24 @@ function Home() {
     }
   }
 
+  const handleJoinTrip = async (tripId) => {
+    setJoiningTripId(tripId)
+    try {
+      const response = await fetchWithAuth(`/api/trips/${tripId}/book`, { method: 'POST' })
+      if (!response.ok) {
+        const errorBody = await response.json().catch(() => ({}))
+        throw new Error(errorBody.message || 'Unable to join trip')
+      }
+      setJoinedTrips((prev) => new Set([...prev, tripId]))
+      setTripStatus({ state: 'success', message: 'Successfully joined trip!' })
+      await loadTrips()
+    } catch (error) {
+      setTripStatus({ state: 'error', message: error.message })
+    } finally {
+      setJoiningTripId(null)
+    }
+  }
+
   return (
     <section className="home">
       <div className="hero-card">
@@ -226,22 +304,28 @@ function Home() {
         <h1>{heroCTA.title}</h1>
         <p className="hero-subtitle">{heroCTA.subtitle}</p>
         <div className="hero-actions">
-          <button
-            className="primary-btn"
-            onClick={() => {
-              setFormVisible((prev) => !prev)
-              setEditingTripId(null)
-              setTripPayload(initialTripPayload)
-            }}
-          >
-            {isFormVisible ? 'Close Trip Form' : heroCTA.actions[0].label}
-          </button>
-          <a className="secondary-btn" href={heroCTA.actions[1].href}>
-            {heroCTA.actions[1].label}
-          </a>
-          <a className="secondary-btn" href={heroCTA.actions[2].href}>
-            {heroCTA.actions[2].label}
-          </a>
+          {heroCTA.actions[0] && (
+            <button
+              className="primary-btn"
+              onClick={() => {
+                setFormVisible((prev) => !prev)
+                setEditingTripId(null)
+                setTripPayload(initialTripPayload)
+              }}
+            >
+              {isFormVisible ? 'Close Trip Form' : heroCTA.actions[0].label}
+            </button>
+          )}
+          {heroCTA.actions[1] && (
+            <a className="secondary-btn" href={heroCTA.actions[1].href}>
+              {heroCTA.actions[1].label}
+            </a>
+          )}
+          {heroCTA.actions[2] && (
+            <a className="secondary-btn" href={heroCTA.actions[2].href}>
+              {heroCTA.actions[2].label}
+            </a>
+          )}
         </div>
       </div>
 
@@ -403,7 +487,7 @@ function Home() {
               </tr>
             </thead>
             <tbody>
-              {trips.map((trip) => {
+              {futureTrips.map((trip) => {
                 const start = locationMap.get(trip.start_location_id)
                 const dest = locationMap.get(trip.arrival_location_id)
                 return (
@@ -433,16 +517,35 @@ function Home() {
                           </button>
                         </>
                       ) : (
-                        <span className="muted">View</span>
+                        <>
+                          {isAuthenticated && joinedTrips.has(trip.trip_id) && (
+                            <span className="muted">Joined</span>
+                          )}
+                          {isAuthenticated && !joinedTrips.has(trip.trip_id) && (
+                            <button
+                              type="button"
+                              className="ghost-btn"
+                              onClick={() => handleJoinTrip(trip.trip_id)}
+                              disabled={joiningTripId === trip.trip_id}
+                            >
+                              {joiningTripId === trip.trip_id ? 'Joining...' : 'Join'}
+                            </button>
+                          )}
+                          {!isAuthenticated && (
+                            <span className="muted">View</span>
+                          )}
+                        </>
                       )}
                     </td>
                   </tr>
                 )
               })}
-              {trips.length === 0 && (
+              {futureTrips.length === 0 && (
                 <tr>
                   <td colSpan="7" className="muted">
-                    No trips yet. Be the first to post.
+                    {isAuthenticated
+                      ? 'No upcoming trips. Be the first to post.'
+                      : 'Log in to see upcoming trips'}
                   </td>
                 </tr>
               )}
