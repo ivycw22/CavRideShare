@@ -123,4 +123,30 @@ router.post('/login', async (req, res) => {
   }
 })
 
+router.get('/users/:uvaId', async (req, res) => {
+  const { uvaId } = req.params
+
+  try {
+    const [rows] = await pool.execute(
+      'SELECT uva_id, fname, lname, phone_number FROM User WHERE uva_id = ? LIMIT 1',
+      [uvaId],
+    )
+
+    if (rows.length === 0) {
+      return res.status(404).json({ message: 'User not found' })
+    }
+
+    const user = rows[0]
+    return res.json({
+      uvaId: user.uva_id,
+      fname: user.fname,
+      lname: user.lname,
+      phoneNumber: user.phone_number,
+    })
+  } catch (error) {
+    console.error('Failed to fetch user', error)
+    return res.status(500).json({ message: 'Unable to fetch user information' })
+  }
+})
+
 module.exports = router

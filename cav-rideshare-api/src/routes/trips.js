@@ -183,7 +183,7 @@ router.get('/mine', authenticate, async (req, res) => {
              t.seats_available, t.notes,
              l1.location_id as start_location_id, l1.name as start_location_name,
              l2.location_id as arrival_location_id, l2.name as arrival_location_name,
-             'driver' as role
+             'driver' as role, NULL as driver_id
       FROM Trips t
       JOIN Drives d ON t.trip_id = d.trip_id
       LEFT JOIN Location l1 ON t.start_location = l1.location_id
@@ -196,9 +196,10 @@ router.get('/mine', authenticate, async (req, res) => {
              t.seats_available, t.notes,
              l1.location_id as start_location_id, l1.name as start_location_name,
              l2.location_id as arrival_location_id, l2.name as arrival_location_name,
-             'rider' as role
+             'rider' as role, d.uva_id as driver_id
       FROM Trips t
       JOIN Rides_In r ON t.trip_id = r.trip_id
+      LEFT JOIN Drives d ON t.trip_id = d.trip_id
       LEFT JOIN Location l1 ON t.start_location = l1.location_id
       LEFT JOIN Location l2 ON t.arrival_location = l2.location_id
       WHERE r.uva_id = ?
