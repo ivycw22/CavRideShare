@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, Link } from 'react-router-dom'
 import { formatLocalDateTime, formatLocalDateTimeForInput } from '../utils/dateTime'
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:4000'
@@ -502,7 +502,15 @@ function Home() {
                     <td>{dest?.name || trip.arrival_location_id}</td>
                     <td>{formatLocalDateTime(trip.departure_time)}</td>
                     <td>{trip.seats_available}</td>
-                    <td>{trip.driver_id || '—'}</td>
+                    <td>
+                      {trip.driver_id ? (
+                        <Link to={`/user/${trip.driver_id}`} style={{ color: '#0066cc', textDecoration: 'none' }}>
+                          {trip.driver_id}
+                        </Link>
+                      ) : (
+                        '—'
+                      )}
+                    </td>
                     <td>{trip.notes || '—'}</td>
                     <td className="row-actions">
                       {canManageTrip(trip) ? (

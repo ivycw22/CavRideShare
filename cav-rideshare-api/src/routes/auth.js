@@ -35,15 +35,21 @@ router.post('/signup', async (req, res) => {
     )
 
     if (role === 'driver') {
-      const { licensePlate } = req.body
-      if (!licensePlate) {
+      const { licensePlate, carMake, carModel, carMpg, carMaxPassengers } = req.body
+      if (!licensePlate || !carMake || !carModel || !carMaxPassengers) {
         await pool.execute('DELETE FROM User WHERE uva_id = ?', [uvaId])
-        return res.status(400).json({ message: 'License plate is required for driver accounts' })
+        return res.status(400).json({ message: 'License plate, car make, car model, and max passengers are required for driver accounts' })
       }
       await pool.execute(
         `INSERT INTO Driver (uva_id, license_plate)
          VALUES (?, ?)`,
         [uvaId, licensePlate],
+      )
+      // Insert car record immediately
+      await pool.execute(
+        `INSERT INTO Car (license_plate, user_id, make, model, mpg, max_passengers)
+         VALUES (?, ?, ?, ?, ?, ?)`,
+        [licensePlate, uvaId, carMake, carModel, carMpg || null, carMaxPassengers],
       )
     }
 
@@ -128,7 +134,7 @@ router.get('/users/:uvaId', async (req, res) => {
 
   try {
     const [rows] = await pool.execute(
-      'SELECT uva_id, fname, lname, phone_number FROM User WHERE uva_id = ? LIMIT 1',
+      'SELECT uva_id, fname, lname FROM User WHERE uva_id = ? LIMIT 1',
       [uvaId],
     )
 
@@ -137,11 +143,19 @@ router.get('/users/:uvaId', async (req, res) => {
     }
 
     const user = rows[0]
+    
+    // Check if user is a driver
+    const [driverRows] = await pool.execute(
+      'SELECT uva_id FROM Driver WHERE uva_id = ? LIMIT 1',
+      [uvaId],
+    )
+    const isDriver = driverRows.length > 0
+
     return res.json({
       uvaId: user.uva_id,
       fname: user.fname,
       lname: user.lname,
-      phoneNumber: user.phone_number,
+      isDriver,
     })
   } catch (error) {
     console.error('Failed to fetch user', error)

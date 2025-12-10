@@ -8,6 +8,10 @@ const initialForm = {
   lname: '',
   phoneNumber: '',
   licensePlate: '',
+  carMake: '',
+  carModel: '',
+  carMpg: '',
+  carMaxPassengers: '',
   password: '',
   confirmPassword: '',
   role: 'rider',
@@ -36,6 +40,11 @@ function Signup() {
       return
     }
 
+    if (form.role === 'driver' && (!form.carMake || !form.carModel || !form.carMaxPassengers)) {
+      setStatus({ state: 'error', message: 'Car make, model, and max passengers are required for drivers.' })
+      return
+    }
+
     setStatus({ state: 'loading', message: 'Creating your account...' })
 
     try {
@@ -50,6 +59,10 @@ function Signup() {
 
       if (form.role === 'driver') {
         payload.licensePlate = form.licensePlate
+        payload.carMake = form.carMake
+        payload.carModel = form.carModel
+        payload.carMpg = form.carMpg ? parseFloat(form.carMpg) : null
+        payload.carMaxPassengers = parseInt(form.carMaxPassengers, 10)
       }
 
       const response = await fetch(`${API_BASE_URL}/api/auth/signup`, {
@@ -172,17 +185,64 @@ function Signup() {
             </select>
           </label>
           {form.role === 'driver' && (
-            <label>
-              License Plate
-              <input
-                type="text"
-                name="licensePlate"
-                placeholder="AB-1234"
-                required
-                value={form.licensePlate}
-                onChange={handleChange}
-              />
-            </label>
+            <>
+              <label>
+                License Plate
+                <input
+                  type="text"
+                  name="licensePlate"
+                  placeholder="AB-1234"
+                  required
+                  value={form.licensePlate}
+                  onChange={handleChange}
+                />
+              </label>
+              <label>
+                Car Make
+                <input
+                  type="text"
+                  name="carMake"
+                  placeholder="Toyota"
+                  required
+                  value={form.carMake}
+                  onChange={handleChange}
+                />
+              </label>
+              <label>
+                Car Model
+                <input
+                  type="text"
+                  name="carModel"
+                  placeholder="Camry"
+                  required
+                  value={form.carModel}
+                  onChange={handleChange}
+                />
+              </label>
+              <label>
+                MPG (optional)
+                <input
+                  type="number"
+                  name="carMpg"
+                  placeholder="25.5"
+                  step="0.1"
+                  value={form.carMpg}
+                  onChange={handleChange}
+                />
+              </label>
+              <label>
+                Max Passengers
+                <input
+                  type="number"
+                  name="carMaxPassengers"
+                  placeholder="5"
+                  min="1"
+                  required
+                  value={form.carMaxPassengers}
+                  onChange={handleChange}
+                />
+              </label>
+            </>
           )}
           <button className="primary-btn" type="submit" disabled={status.state === 'loading'}>
             {status.state === 'loading' ? 'Submitting...' : 'Sign up'}
