@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:4000'
 
@@ -8,6 +9,7 @@ function Login() {
   const [credentials, setCredentials] = useState(initialCredentials)
   const [status, setStatus] = useState({ state: 'idle', message: '' })
   const [tokenPreview, setTokenPreview] = useState('')
+  const navigate = useNavigate()
 
   const handleChange = (event) => {
     const { name, value } = event.target
@@ -49,8 +51,10 @@ function Login() {
       } else {
         setTokenPreview('Token will be returned by the backend.')
       }
-      setStatus({ state: 'success', message: 'Logged in! Token cached in localStorage.' })
+      setStatus({ state: 'success', message: 'Logged in! Redirecting to home...' })
       setCredentials(initialCredentials)
+      // Redirect to home page after a short delay
+      setTimeout(() => navigate('/'), 500)
     } catch (error) {
       setStatus({ state: 'error', message: error.message })
       setTokenPreview('')

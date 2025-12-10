@@ -74,6 +74,7 @@
   font-weight: 600;
   cursor: pointer;
   transition: background 120ms ease;
+  text-decoration: none;
 }
 
 .primary-btn:hover:enabled {

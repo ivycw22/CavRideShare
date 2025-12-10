@@ -188,7 +188,7 @@ router.get('/mine', authenticate, async (req, res) => {
       JOIN Drives d ON t.trip_id = d.trip_id
       LEFT JOIN Location l1 ON t.start_location = l1.location_id
       LEFT JOIN Location l2 ON t.arrival_location = l2.location_id
-      WHERE d.uva_id = ? AND t.departure_time >= NOW()
+      WHERE d.uva_id = ?
 
       UNION ALL
 
@@ -201,9 +201,9 @@ router.get('/mine', authenticate, async (req, res) => {
       JOIN Rides_In r ON t.trip_id = r.trip_id
       LEFT JOIN Location l1 ON t.start_location = l1.location_id
       LEFT JOIN Location l2 ON t.arrival_location = l2.location_id
-      WHERE r.uva_id = ? AND t.departure_time >= NOW()
+      WHERE r.uva_id = ?
 
-      ORDER BY departure_time ASC
+      ORDER BY departure_time DESC
       `,
       [uvaId, uvaId],
     )

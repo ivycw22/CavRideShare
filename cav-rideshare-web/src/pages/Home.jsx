@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { formatLocalDateTime, formatLocalDateTimeForInput } from '../utils/dateTime'
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:4000'
 
@@ -257,7 +258,7 @@ function Home() {
     setTripPayload({
       startLocationId: trip.start_location_id,
       arrivalLocationId: trip.arrival_location_id,
-      departureTime: trip.departure_time?.slice(0, 16),
+      departureTime: formatLocalDateTimeForInput(trip.departure_time),
       seatsAvailable: trip.seats_available,
       notes: trip.notes || '',
     })
@@ -304,7 +305,7 @@ function Home() {
         <h1>{heroCTA.title}</h1>
         <p className="hero-subtitle">{heroCTA.subtitle}</p>
         <div className="hero-actions">
-          {heroCTA.actions[0] && (
+          {heroCTA.actions[0]?.label === 'New Trip' && (
             <button
               className="primary-btn"
               onClick={() => {
@@ -313,8 +314,13 @@ function Home() {
                 setTripPayload(initialTripPayload)
               }}
             >
-              {isFormVisible ? 'Close Trip Form' : heroCTA.actions[0].label}
+              {isFormVisible ? 'Close Trip Form' : 'New Trip'}
             </button>
+          )}
+          {heroCTA.actions[0]?.label === 'Log In' && (
+            <a className="primary-btn" href={heroCTA.actions[0].href}>
+              {heroCTA.actions[0].label}
+            </a>
           )}
           {heroCTA.actions[1] && (
             <a className="secondary-btn" href={heroCTA.actions[1].href}>
@@ -494,7 +500,7 @@ function Home() {
                   <tr key={trip.trip_id}>
                     <td>{start?.name || trip.start_location_id}</td>
                     <td>{dest?.name || trip.arrival_location_id}</td>
-                    <td>{trip.departure_time?.replace('T', ' ')}</td>
+                    <td>{formatLocalDateTime(trip.departure_time)}</td>
                     <td>{trip.seats_available}</td>
                     <td>{trip.driver_id || '—'}</td>
                     <td>{trip.notes || '—'}</td>
