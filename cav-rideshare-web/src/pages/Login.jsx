@@ -44,6 +44,8 @@ function Login() {
           localStorage.setItem('cavrideshare_user', JSON.stringify(userMeta))
         }
         setTokenPreview(payload.token)
+        // Dispatch a custom event to notify the App component of the login
+        window.dispatchEvent(new Event('login'))
       } else {
         setTokenPreview('Token will be returned by the backend.')
       }

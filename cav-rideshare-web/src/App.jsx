@@ -21,8 +21,13 @@ function App() {
 
   useEffect(() => {
     const onStorage = () => setIsAuthenticated(Boolean(localStorage.getItem('cavrideshare_token')))
+    const onLogin = () => setIsAuthenticated(Boolean(localStorage.getItem('cavrideshare_token')))
     window.addEventListener('storage', onStorage)
-    return () => window.removeEventListener('storage', onStorage)
+    window.addEventListener('login', onLogin)
+    return () => {
+      window.removeEventListener('storage', onStorage)
+      window.removeEventListener('login', onLogin)
+    }
   }, [])
 
   const handleLogout = () => {
